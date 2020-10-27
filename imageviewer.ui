@@ -294,7 +294,7 @@ font-size:20px</string>
       <string>矩形表示</string>
      </property>
     </widget>
-    <widget class="QLabel" name="rectCheckLabel">
+    <widget class="QLabel" name="rectCountLabel">
      <property name="geometry">
       <rect>
        <x>130</x>
@@ -318,7 +318,7 @@ font-size:20px</string>
       <set>Qt::AlignCenter</set>
      </property>
     </widget>
-    <widget class="QLabel" name="rectCheckLabel2">
+    <widget class="QLabel" name="rectCheckLabel">
      <property name="geometry">
       <rect>
        <x>210</x>
@@ -334,6 +334,174 @@ font-size:20px</string>
       <string>個</string>
      </property>
     </widget>
+    <widget class="QLabel" name="label">
+     <property name="geometry">
+      <rect>
+       <x>20</x>
+       <y>410</y>
+       <width>141</width>
+       <height>51</height>
+      </rect>
+     </property>
+     <property name="styleSheet">
+      <string notr="true">font-size:20px</string>
+     </property>
+     <property name="text">
+      <string>-検出閾値設定-</string>
+     </property>
+    </widget>
+    <widget class="QLabel" name="thSettingLabel3">
+     <property name="geometry">
+      <rect>
+       <x>20</x>
+       <y>450</y>
+       <width>221</width>
+       <height>16</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>[検出範囲：最小値&lt;検出値&lt;最大値]</string>
+     </property>
+    </widget>
+    <widget class="QLabel" name="minRectLabel">
+     <property name="geometry">
+      <rect>
+       <x>20</x>
+       <y>480</y>
+       <width>211</width>
+       <height>21</height>
+      </rect>
+     </property>
+     <property name="styleSheet">
+      <string notr="true">font-size:20px</string>
+     </property>
+     <property name="text">
+      <string>・最小値  (pixel)</string>
+     </property>
+    </widget>
+    <widget class="QLabel" name="maxRectLabel">
+     <property name="geometry">
+      <rect>
+       <x>20</x>
+       <y>510</y>
+       <width>151</width>
+       <height>21</height>
+      </rect>
+     </property>
+     <property name="styleSheet">
+      <string notr="true">font-size:20px</string>
+     </property>
+     <property name="text">
+      <string>・最大値  (pixel)</string>
+     </property>
+    </widget>
+    <widget class="QLabel" name="aspectRationLabel">
+     <property name="geometry">
+      <rect>
+       <x>20</x>
+       <y>540</y>
+       <width>151</width>
+       <height>21</height>
+      </rect>
+     </property>
+     <property name="styleSheet">
+      <string notr="true">font-size:20px</string>
+     </property>
+     <property name="text">
+      <string>・縦横比  (W/H)</string>
+     </property>
+    </widget>
+    <widget class="QSpinBox" name="minRectSpinBox">
+     <property name="geometry">
+      <rect>
+       <x>170</x>
+       <y>480</y>
+       <width>50</width>
+       <height>22</height>
+      </rect>
+     </property>
+     <property name="styleSheet">
+      <string notr="true">font-size:14px;
+background-color:white;
+color:black;
+</string>
+     </property>
+     <property name="minimum">
+      <number>1</number>
+     </property>
+     <property name="maximum">
+      <number>999</number>
+     </property>
+    </widget>
+    <widget class="QSpinBox" name="maxRectSpinBox">
+     <property name="geometry">
+      <rect>
+       <x>170</x>
+       <y>510</y>
+       <width>50</width>
+       <height>22</height>
+      </rect>
+     </property>
+     <property name="styleSheet">
+      <string notr="true">font-size:14px;
+background-color:white;
+color:black;
+</string>
+     </property>
+     <property name="minimum">
+      <number>50</number>
+     </property>
+     <property name="maximum">
+      <number>999</number>
+     </property>
+    </widget>
+    <widget class="QDoubleSpinBox" name="aspectRatioSpinBox">
+     <property name="geometry">
+      <rect>
+       <x>170</x>
+       <y>540</y>
+       <width>50</width>
+       <height>22</height>
+      </rect>
+     </property>
+     <property name="styleSheet">
+      <string notr="true">font-size:14px;
+background-color:white;
+color:black;
+</string>
+     </property>
+     <property name="decimals">
+      <number>1</number>
+     </property>
+     <property name="minimum">
+      <double>1.000000000000000</double>
+     </property>
+     <property name="maximum">
+      <double>10.000000000000000</double>
+     </property>
+     <property name="singleStep">
+      <double>0.100000000000000</double>
+     </property>
+     <property name="value">
+      <double>1.500000000000000</double>
+     </property>
+    </widget>
+    <widget class="QPushButton" name="exportCSVButton">
+     <property name="geometry">
+      <rect>
+       <x>10</x>
+       <y>880</y>
+       <width>231</width>
+       <height>51</height>
+      </rect>
+     </property>
+     <property name="styleSheet">
+      <string notr="true">font-size:25px; background-color:gray</string>
+     </property>
+     <property name="text">
+      <string>CSV出力</string>
+     </property>
+    </widget>
    </widget>
    <widget class="QLabel" name="imgLabel">
     <property name="geometry">
@@ -344,21 +512,17 @@ font-size:20px</string>
       <height>940</height>
      </rect>
     </property>
-    <property name="autoFillBackground">
-     <bool>false</bool>
-    </property>
     <property name="styleSheet">
-     <string notr="true">background-color:gray</string>
+     <string notr="true">background-color:gray;
+padding:0;
+margin:0;
+
+</string>
     </property>
     <property name="text">
      <string/>
     </property>
-    <property name="alignment">
-     <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
-    </property>
    </widget>
-   <zorder>imgLabel</zorder>
-   <zorder>frame</zorder>
   </widget>
   <widget class="QMenuBar" name="menubar">
    <property name="geometry">

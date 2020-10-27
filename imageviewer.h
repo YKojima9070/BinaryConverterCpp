@@ -7,13 +7,15 @@
 #include <QPixmap>
 #include <QDragEnterEvent>
 #include <QDropEvent>
-#include <QMimeData>
-#include <QFileInfo>
 #include <QMessageBox>
-#include <QResizeEvent>
 #include <QMouseEvent>
-#include "opencv2/opencv.hpp"
 #include <QPalette>
+#include <QMimeData>
+
+#include <string>
+#include <fstream>
+
+#include "opencv2/opencv.hpp"
 
 QT_BEGIN_NAMESPACE
 namespace  Ui { class ImageViewer; }
@@ -31,11 +33,13 @@ private slots:
     void on_threshSlider_sliderMoved(int position);
     void on_liveCheckBox_stateChanged(int arg1);
     void on_rectCheckBox_stateChanged(int arg1);
+    void on_exportCSVButton_clicked();
 
 private:
     Ui::ImageViewer *ui;
     QPixmap pixmap;
     QString filename;
+    QString savefilename;
 
     int IMAGE_CANVAS_WIDTH = 1400;
     int IMAGE_CANVAS_HEIGHT = 940;
@@ -43,6 +47,8 @@ private:
     int pixData[3];
     int imgDataWidth;
     int imgDataHeight;
+    int resizedImgDataWidth;
+    int resizedImgDataHeight;
 
     cv::Mat imgData;
     cv::Mat resizedImg;
@@ -61,7 +67,6 @@ private:
 
     //画像座標値計算用//
     int targetPosiX, targetPosiY;   //位置変更ターゲット座標
-    int imgPosiX, imgPosiY;         //画像座標使用
     int orgPosiX, orgPosiY;         //移動前座標
     int deltaPosiX, deltaPosiY;     //ドラッグ移動時差分計算用
     int shiftedPosiX, shiftedPosiY; //画像移動後、座標算出用
@@ -86,7 +91,12 @@ private:
     bool liveRadioChecked;
     bool rectRadioChecked = false;
 
+    //矩形表示閾値関連//
+    int rectCount;
+    int minRectSize;
+    int maxRectSize;
+    double aspectRatio;
+    std::vector<std::vector<int>> detectedRectResult;
+
 };
-
-
 #endif // IMAGEVIEWER_H
