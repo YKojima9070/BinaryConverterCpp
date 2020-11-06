@@ -18,16 +18,32 @@ HEADERS += \
     imageviewer.h
 
 FORMS += \
-    imageviewer.ui
+#    imageviewer.ui \
+    imageviewer1366.ui \
+    imageviewer1680.ui
+
+QMAKE_CXXFLAGS += -std=c++17 \
+                  -std=c++1z
 
 unix:mac{
+    QMAKE_CXXFLAGS += -std=c++17
+
     INCLUDEPATH += /Users/yuki/source/opencv-4.4.0/include
     LIBS += -L/Users/yuki/source/opencv/lib \
     -lopencv_world
 }
 
+win32{
+    QMAKE_CXXFLAGS += std:c++17
 
-
+    INCLUDEPATH += C:/opencv/release/install/include
+    Debug:{
+    LIBS += -lc:/opencv/release/install/x64/vc16/lib/opencv_world440d
+    }
+    Release:{
+    LIBS += -lc:/opencv/release/install/x64/vc16/lib/opencv_world440
+    }
+}
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin

@@ -1,5 +1,5 @@
-#ifndef MAINWINDOW_H
-#define MAINWINDOW_H
+//#ifndef MAINWINDOW_H
+//#define MAINWINDOW_H
 
 #include <QMainWindow>
 #include <QLabel>
@@ -30,10 +30,12 @@ public:
     ~ ImageViewer();
 
 private slots:
-    void on_threshSlider_sliderMoved(int position);
+    void on_threshSliderLow_sliderMoved(int position);
     void on_liveCheckBox_stateChanged(int arg1);
     void on_rectCheckBox_stateChanged(int arg1);
+    void on_threshSliderUpp_sliderMoved(int position);
     void on_exportCSVButton_clicked();
+    void on_exportCSVButtonBatch_clicked();
 
 private:
     Ui::ImageViewer *ui;
@@ -41,8 +43,13 @@ private:
     QString filename;
     QString savefilename;
 
+     /* DisplaySize
     int IMAGE_CANVAS_WIDTH = 1400;
     int IMAGE_CANVAS_HEIGHT = 940;
+    */
+
+    int IMAGE_CANVAS_WIDTH = 1100;
+    int IMAGE_CANVAS_HEIGHT = 763;
 
     int pixData[3];
     int imgDataWidth;
@@ -58,6 +65,7 @@ private:
     void initAllPosi();
     void imageProcessor();
     void showImageWindow(cv::Mat *img, QImage::Format format);
+    void exportCSVFile();
 
     QString colorToHex();
     cv::Mat resizeBox(cv::Mat *img);
@@ -65,19 +73,20 @@ private:
     cv::Mat rectShowImage(cv::Mat *img);
     cv::Mat affineImg(cv::Mat *img);
 
-    //画像座標値計算用//
-    int targetPosiX, targetPosiY;   //位置変更ターゲット座標
-    int orgPosiX, orgPosiY;         //移動前座標
-    int deltaPosiX, deltaPosiY;     //ドラッグ移動時差分計算用
-    int shiftedPosiX, shiftedPosiY; //画像移動後、座標算出用
+    //ImageCoordinate//
+    int targetPosiX, targetPosiY;
+    int orgPosiX, orgPosiY;
+    int deltaPosiX, deltaPosiY;
+    int shiftedPosiX, shiftedPosiY;
 
-    //マウス、イメージ倍率関連//
-    int threshValue;
+    //Mouse,Image,Magunification//
+    int threshValueLow;
+    int threshValueUpp;
     int wheelCount = 0;
     float imgMaguni = 1;
     double image_scale;
 
-    //マウス操作イベント関連//
+    //MouseEvent//
     void dragEnterEvent(QDragEnterEvent *event);
     void dropEvent(QDropEvent *event);
     void mousePressEvent(QMouseEvent *event);
@@ -87,11 +96,12 @@ private:
     void wheelEvent(QWheelEvent *event);
     bool imgMoveEvent = false;
 
-    //GUIイベント用//
+    //GUIEvent//
     bool liveRadioChecked;
     bool rectRadioChecked = false;
+    bool analyzeFlag = false;
 
-    //矩形表示閾値関連//
+    //Rect//
     int rectCount;
     int minRectSize;
     int maxRectSize;
@@ -99,4 +109,4 @@ private:
     std::vector<std::vector<int>> detectedRectResult;
 
 };
-#endif // IMAGEVIEWER_H
+//#endif // IMAGEVIEWER_H

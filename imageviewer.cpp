@@ -1,5 +1,10 @@
 #include "imageviewer.h"
-#include "ui_imageviewer.h"
+//#include "ui_imageviewer1680.h"
+#include "ui_imageviewer1366.h"
+#include <filesystem>
+#include <fstream>
+#include <QDebug>
+
 
 ImageViewer::ImageViewer(QWidget *parent)
     : QMainWindow(parent)
@@ -10,6 +15,8 @@ ImageViewer::ImageViewer(QWidget *parent)
     setAcceptDrops(true);
     initAllPosi();
 
+    this->filename = QFileDialog::getOpenFileName(this, "Select Output Image", QDir::currentPath(), "*.jpg *.png *.bmp *.jpeg *.tiff");
+
     getImgData();
     imageProcessor();
 }
@@ -19,7 +26,11 @@ ImageViewer::~ImageViewer()
     delete ui;
 }
 
-//画像座標値初期化//
+///////////////////
+//ImageProcessing//
+///////////////////
+
+//ImageCoordinate//
 void ImageViewer::initAllPosi()
 {
     this->targetPosiX = 0;
@@ -36,16 +47,11 @@ void ImageViewer::initAllPosi()
 
     this->wheelCount = 0;
     this->imgMaguni = 1;
-
 }
 
-//開始時画像パス取得//
+//GetImagePATH//
 void ImageViewer::getImgData()
 {
-    this->filename = QFileDialog::getOpenFileName(this,
-                                                    "Select Output Image",
-                                                    QDir::currentPath(),
-                                                    "*.jpg;;*.png;;*.bmp");
     /*
     if(QFile::exists(fileName))
     {
@@ -58,37 +64,38 @@ void ImageViewer::getImgData()
     this->imgDataHeight = this->imgData.rows;
 }
 
-//画像表示//
+//DisplayImage//
 void ImageViewer::imageProcessor()
 {
-    cv::Mat tmpImg;
+    cv::Mat tmpImg, rectedImg;
     QImage::Format format;
 
-    cv::Mat affinedImg = affineImg(&imgData);
-
-    //二値化画像表示//
     if(this->liveRadioChecked)
     {
-        affinedImg = binaryChange(&affinedImg);
-
         if(this->rectRadioChecked)
         {
+            tmpImg = binaryChange(&this->imgData);
+            tmpImg = rectShowImage(&tmpImg);
             format = QImage::Format_RGB888;
-            affinedImg = rectShowImage(&affinedImg);
         }
-        else format = QImage::Format_Grayscale8;
+        else
+        {
+            tmpImg = binaryChange(&this->imgData);
+            format = QImage::Format_Grayscale8;
+        }
+        tmpImg = affineImg(&tmpImg);
     }
-    //オリジナル画像表示//
     else
     {
+        tmpImg = affineImg(&this->imgData);
         format = QImage::Format_RGB888;
     }
-    this->resizedImg = resizeBox(&affinedImg);
+    this->resizedImg = resizeBox(&tmpImg);
 
     showImageWindow(&this->resizedImg, format);
 }
 
-//QImge変換->表示//
+//ConvertToQImage//
 void ImageViewer::showImageWindow(cv::Mat *img, QImage::Format format)
 {
     cv::Mat pImg = *img;
@@ -101,29 +108,28 @@ void ImageViewer::showImageWindow(cv::Mat *img, QImage::Format format)
     ui->imgLabel->setPixmap(m_pix_map);
 }
 
-//画像リサイズ変換//
+//ResizeImage//
 cv::Mat ImageViewer::resizeBox(cv::Mat *raw_img)
 {
     cv::Mat img = *raw_img;
 
-    if(img.cols > this->IMAGE_CANVAS_WIDTH && img.rows > this->IMAGE_CANVAS_HEIGHT)
-    {
-        this->image_scale = std::max((double)this->IMAGE_CANVAS_WIDTH / (double)img.cols, (double)this->IMAGE_CANVAS_HEIGHT / (double)img.rows);
-    }
-    else
-    {
-        this->image_scale = std::min((double)this->IMAGE_CANVAS_WIDTH / (double)img.cols, (double)this->IMAGE_CANVAS_HEIGHT / (double)img.rows);
-    }
+    double xScale = (double)this->IMAGE_CANVAS_WIDTH / (double)img.cols;
+    double yScale = (double)this->IMAGE_CANVAS_HEIGHT / (double)img.rows;
+
+    this->image_scale = (double)std::min(xScale, yScale);
 
     cv::resize(img, img, cv::Size(), this->image_scale, this->image_scale);
 
     this->resizedImgDataWidth = img.cols;
     this->resizedImgDataHeight = img.rows;
 
+    std::cout << img.size << std::endl;
+
+
     return img;
 }
 
-//ピクセル輝度値情報取得//
+//GetImagePixelData//
 void ImageViewer::getPixValue(int x, int y)
 {
     int calX = (((1 / this->imgMaguni) * x) - this->shiftedPosiX + (this->resizedImgDataWidth - (this->resizedImgDataWidth / this->imgMaguni)) / 2) / this->image_scale;
@@ -137,7 +143,7 @@ void ImageViewer::getPixValue(int x, int y)
     else this->pixData[0] = this->imgData.at<unsigned char>(calY, calX);
 }
 
-//RGB->HEX変換//
+//RGB->HEX//
 QString ImageViewer::colorToHex(){
     int red   = this->pixData[2];
     int green = this->pixData[1];
@@ -149,7 +155,7 @@ QString ImageViewer::colorToHex(){
     return QString::fromStdString(ss.str());
 }
 
-//BGR->Binary変換(二値化処理)//
+//BGR->Binary//
 cv::Mat ImageViewer::binaryChange(cv::Mat *img)
 {
    cv::Mat mask;
@@ -158,13 +164,13 @@ cv::Mat ImageViewer::binaryChange(cv::Mat *img)
    int g = this->pixData[1];
    int r = this->pixData[2];
 
-   cv::Scalar s_min = cv::Scalar(b - this->threshValue,
-                                 g - this->threshValue,
-                                 r - this->threshValue);
+   cv::Scalar s_min = cv::Scalar(b - this->threshValueLow,
+                                 g - this->threshValueLow,
+                                 r - this->threshValueLow);
 
-   cv::Scalar s_max = cv::Scalar(b + this->threshValue,
-                                 g + this->threshValue,
-                                 r + this->threshValue);
+   cv::Scalar s_max = cv::Scalar(b + this->threshValueUpp,
+                                 g + this->threshValueUpp,
+                                 r + this->threshValueUpp);
 
    cv::inRange(*img, s_min, s_max, mask);
 
@@ -172,7 +178,7 @@ cv::Mat ImageViewer::binaryChange(cv::Mat *img)
 }
 
 
-//矩形検出/表示アルゴリズム//
+//DetectRect//
 cv::Mat ImageViewer::rectShowImage(cv::Mat *img)
 {
     this->rectCount = 0;
@@ -180,7 +186,7 @@ cv::Mat ImageViewer::rectShowImage(cv::Mat *img)
     cv::Mat rectImg = *img;
     cv::cvtColor(*img, rectImg, cv::COLOR_GRAY2BGR);
 
-    //矩形表示閾値設定, 最小・最大・W/D比//
+    //SetThreshold Image Min,MaxSize//
     this->minRectSize = ui->minRectSpinBox->text().toInt();
     this->maxRectSize = ui->maxRectSpinBox->text().toInt();
     this->aspectRatio = ui->aspectRatioSpinBox->text().toDouble();
@@ -198,10 +204,8 @@ cv::Mat ImageViewer::rectShowImage(cv::Mat *img)
         int w = rects.width;
         int h = rects.height;
 
-
         if(std::min(w, h) > this->minRectSize && std::max(w, h) < this->maxRectSize && ((std::max(w, h) / std::min(w, h)) < this->aspectRatio))
         {
-            //int data[4] = {x, y, w, h};
             this->rectCount ++ ;
             this->detectedRectResult.push_back({x, y, w, h});
 
@@ -213,7 +217,7 @@ cv::Mat ImageViewer::rectShowImage(cv::Mat *img)
 }
 
 
-//アフィン変換(イメージシフト、ズーム処理)
+//AffineProcess
 cv::Mat ImageViewer::affineImg(cv::Mat *img)
 {
     cv::Mat shiftedImg;
@@ -248,8 +252,44 @@ cv::Mat ImageViewer::affineImg(cv::Mat *img)
     return dstImg;
 }
 
+////////////////
+//FileHandling//
+////////////////
 
-//ドラッグアンドドロップイベント操作//
+//ExportCSVData//
+void ImageViewer::on_exportCSVButton_clicked()
+{
+    this->savefilename = QFileDialog::getSaveFileName(this, "SelectSave", QDir::currentPath(), "*.csv");
+    exportCSVFile();
+}
+
+void ImageViewer::exportCSVFile()
+{
+    std::ofstream exportFile;
+    exportFile.open(this->savefilename.toStdString(), std::ios::out);
+    exportFile << "ThreshValueLow:" << this->threshValueLow << ","
+               << "ThreshValueUpp:" << this->threshValueUpp << ","
+               << "MinRectSize:" << this->minRectSize << ","
+               << "MaxRectSize:" << this->maxRectSize << ","
+               << "AspectRatio:" << this->aspectRatio << std::endl;
+    exportFile << "x," << "y," << "w," << "h" << std::endl;
+
+    for (int i=0; i < (int)this->detectedRectResult.size(); i++ )
+    {
+        for (int j=0; j < (int)this->detectedRectResult.at(i).size(); j++)
+        {
+            exportFile << this->detectedRectResult.at(i).at(j) << ",";
+            if(j==(int)this->detectedRectResult.at(i).size()-1) exportFile<<std::endl;
+        }
+    }
+}
+
+
+////////////////////////
+//Mouse,EVENT Handling//
+////////////////////////
+
+//DragAndDropHandling//
 void ImageViewer::dragEnterEvent(QDragEnterEvent( *event))
 {
 
@@ -257,6 +297,8 @@ void ImageViewer::dragEnterEvent(QDragEnterEvent( *event))
     accepterFileTypes.append("jpg");
     accepterFileTypes.append("png");
     accepterFileTypes.append("bmp");
+    accepterFileTypes.append("jpeg");
+    accepterFileTypes.append("tiff");
 
     if (event->mimeData()->hasUrls() && event->mimeData()->urls().count() ==1)
     {
@@ -268,10 +310,14 @@ void ImageViewer::dragEnterEvent(QDragEnterEvent( *event))
     }
 }
 
-//画像ドロップイベント//
+//DropImageEvent//
 void ImageViewer::dropEvent(QDropEvent *event)
 {
     QFileInfo file(event->mimeData()->urls().at(0).toLocalFile());
+
+    this->imgData = cv::imread(file.absoluteFilePath().toStdString());
+    imageProcessor();
+    /*
     if(pixmap.load(file.absoluteFilePath()))
     {
         ui->imgLabel->setPixmap(pixmap.scaled(ui->imgLabel->size(),
@@ -282,9 +328,10 @@ void ImageViewer::dropEvent(QDropEvent *event)
     {
         QMessageBox::critical(this, tr("Error"), tr("The image file cannot be read!"));
     }
+    */
 }
 
-//マウスクリックイベント操作//
+//ClickMouseEvent//
 void ImageViewer::mousePressEvent(QMouseEvent *event)
 {
     int x = event->x() - 6;
@@ -304,9 +351,10 @@ void ImageViewer::mousePressEvent(QMouseEvent *event)
     }
 }
 
-//マウス移動イベント操作//
+//MoveMouseEvent//
 void ImageViewer::mouseMoveEvent(QMouseEvent *event)
 {
+    this->analyzeFlag = false;
     int x = event->x() - 6;
     int y = event->y() - 6;
 
@@ -324,7 +372,7 @@ void ImageViewer::mouseMoveEvent(QMouseEvent *event)
      }
 }
 
-//マウスリリースイベント,移動量保管//
+//ReleaseMouseButtonEvent//
 void ImageViewer::mouseReleaseEvent(QMouseEvent *event)
 {
     if(event->button() == Qt::LeftButton && event->x() < 1400 && this->imgMoveEvent)
@@ -335,7 +383,7 @@ void ImageViewer::mouseReleaseEvent(QMouseEvent *event)
     }
 }
 
-//マウスダブルクリックイベント、位置初期化//
+//Double-ClickButtonEvent//
 void ImageViewer::mouseDoubleClickEvent(QMouseEvent *event)
 {
     if(event->button() == Qt::LeftButton)
@@ -345,9 +393,10 @@ void ImageViewer::mouseDoubleClickEvent(QMouseEvent *event)
     }
 }
 
-//画像拡大縮小、マウスホイールイベント//
+//MouseWheelEvent//
 void ImageViewer::wheelEvent(QWheelEvent *event)
 {
+    this->analyzeFlag = false;
     int degree = event->angleDelta().y();
 
     if(degree > 0) this->wheelCount ++;
@@ -359,49 +408,81 @@ void ImageViewer::wheelEvent(QWheelEvent *event)
     imageProcessor();
 }
 
-//閾値スライダー動作//
-void ImageViewer::on_threshSlider_sliderMoved(int position)
+//LowThresholdSliderEvent//
+void ImageViewer::on_threshSliderLow_sliderMoved(int position)
 {
-    ui->threshLabel->setText(QString::number(position));
-    this->threshValue = position;    
+    this->analyzeFlag = true;
+    ui->threshLabelLow->setText(QString::number(position));
+    this->threshValueLow = position;
     imageProcessor();
 }
 
-//ライブストリームON/OFF//
+//UpperThresholdSliderEvent//
+void ImageViewer::on_threshSliderUpp_sliderMoved(int position)
+{
+    this->analyzeFlag = true;
+    ui->threshLabelUpp->setText(QString::number(position));
+    this->threshValueUpp = position;
+    imageProcessor();
+}
+
+//LiveViewEventON/OFF//
 void ImageViewer::on_liveCheckBox_stateChanged(int arg1)
 {
+    this->analyzeFlag = true;
     if(arg1 == 2) this->liveRadioChecked = true;
     else this->liveRadioChecked = false;
     imageProcessor();
 }
 
-//矩形表示ON/OFF//
+//DisplayRectON/OFF//
 void ImageViewer::on_rectCheckBox_stateChanged(int arg1)
 {
+    this->analyzeFlag = true;
     if(arg1 == 2) this->rectRadioChecked = true;
     else this->rectRadioChecked = false;
 
     imageProcessor();
 }
 
-//CSVデータ出力//
-void ImageViewer::on_exportCSVButton_clicked()
+void ImageViewer::on_exportCSVButtonBatch_clicked()
 {
-    this->savefilename = QFileDialog::getSaveFileName(this, "SelectSave", QDir::currentPath(), "*.csv");
-    std::ofstream exportFile;
-    exportFile.open(this->savefilename.toStdString(), std::ios::out);
-    exportFile << "THreshValue:" << this->threshValue << ","
-               << "MinRectSize:" << this->minRectSize << ","
-               << "MaxRectSize:" << this->maxRectSize << ","
-               << "AspectRatio:" << this->aspectRatio << std::endl;
-    exportFile << "x," << "y," << "w," << "h" << std::endl;
+    std::string dirPath;
+    this->filename = QFileDialog::getOpenFileName(this, "Select Output Image", QDir::currentPath(), "*.jpg *.png *.bmp *.jpeg *.tiff");
+    std::string ext("*.jpg *.png *.bmp *.jpeg *.tiff");
 
-    for (int i=0; i < (int)this->detectedRectResult.size(); i++ )
+#ifdef __APPLE__
+
+    int path_i = this->filename.toStdString().find_last_of("/") + 1;
+    dirPath = this->filename.toStdString().substr(0, path_i);
+
+#endif
+
+#ifdef _WIN32
+
+    int path_i = this->filename.toStdString().find_last_of("\\") + 1;
+    dirPath = this->filename.toStdString().substr(0, path_i+1);
+
+#endif
+    QDir dir = QString::fromUtf8(dirPath.c_str());
+    QStringList list;
+
+    initAllPosi();
+    this->liveRadioChecked = true;
+    this->rectRadioChecked = true;
+
+    foreach(QString file, dir.entryList(QDir::Files))
     {
-        for (int j=0; j < (int)this->detectedRectResult.at(i).size(); j++)
-        {
-            exportFile << this->detectedRectResult.at(i).at(j) << ",";
-            if(j==(int)this->detectedRectResult.at(i).size()-1) exportFile<<std::endl;
-        }
+        list.append(QString::fromUtf8(dirPath.c_str()) + QDir::separator() + file);
+    }
+
+    for(int i=0; i<=list.size()-1; i++)
+    {
+        this->filename = list[i];
+        this->savefilename = list[i].section(".", 0, 0);
+
+        getImgData();
+        imageProcessor();
+        exportCSVFile();
     }
 }
